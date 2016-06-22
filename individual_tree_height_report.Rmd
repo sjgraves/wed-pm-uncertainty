@@ -1,0 +1,67 @@
+---
+title: "Individual tree height uncertainty"
+author: "Tree group"
+date: "June 22, 2016"
+output: html_document
+---
+
+## Calculate individual tree cooridnates
+```{r}
+
+### CUSTOM FUNCTION ####
+
+# this function takes a center point (x,y) and calculates a single new point
+# uses a single point or multiple points
+# output is a data frame with the number of rows equal to the number of dis. angles
+point_fromCenter <- function(X,Y,angle,distance){
+  x <- round(X + (distance * cos(angle)),1)
+  y <- round(Y + (distance * sin(angle)),1)
+  newPoint <- c(x,y)
+  newPoint.m <- matrix(newPoint,
+                       ncol=2)
+  return(newPoint.m)
+}
+
+#### IMPORT PLOT LOCATIONS ####
+
+# plot centers
+plot_info <- read.csv("../NEONdata/D03-Florida/OSBS/2014/insitu/plot_locations.csv",
+                      stringsAsFactors = F)
+
+plot_centers <- data.frame(plotid=plot_info$Plot_ID,
+                           x=plot_info$POINT_X,
+                           y=plot_info$POINT_Y,
+                           stringsAsFactors = F)
+
+plot_centers
+
+# veg structure
+tree_info <- read.csv("../NEONdata/D03-Florida/OSBS/2014/insitu/veg_structure/D03_2014_OSBS_vegStr.csv",
+                      stringsAsFactors = F)
+  
+
+
+#### BUILD DATA FRAME ####
+
+# add the plot coordinates to the veg structure data frame by plot id
+# keep all rows in veg structure data
+
+tree_info_merge <- merge(x=tree_info,y=plot_centers,
+                         all.x=T,
+                         all.y=F)
+
+# apply function to tree locations data frame
+tree_cooridnates <- point_fromCenter(X = tree_info_merge$x,
+                                     Y = tree_info_merge$y,
+                                     angle = tree_info_merge$individualazimuth,
+                                     distance = tree_info_merge$individualdistance)
+
+# add tree locations to veg data frame
+tree_info$easting <- tree_cooridnates[,1]
+tree_info$northing <- tree_cooridnates[,2]
+
+```
+
+
+## Extract height data from CHM
+
