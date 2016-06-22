@@ -1,0 +1,90 @@
+---
+title: "test-watershed-method"
+author: "Kunxuan Wang"
+date: "June 22, 2016"
+output: html_document
+---
+
+```{r tests}
+
+library(raster)
+library(rgdal)
+library(maptools)
+source("indTreeExtract/watershed-tree-extract.R")
+
+```
+
+
+```{r }
+
+chm <- raster("../NEONdata/D03-Florida/OSBS/2014/lidar/OSBS_lidarCHM.tif")
+chm[chm==0] <- NA
+hist(chm)
+
+```
+
+```{r test-flow-dir}
+test_list <- c(0, 5, 1,
+             2, 3, 7,
+             5, 2, 2)
+             
+
+# shape into matrix
+ras <- matrix(test_list, 
+                ncol = 3, 
+                byrow = TRUE)
+
+
+#res <- flow_dir(ras)
+#res
+
+ras_flow <- ras
+ord = c(-1,0,1)
+  
+
+# walk through each point in raster
+for (c in 2:(ncol(ras)-1)) {
+  for (r in 2:(nrow(ras)-1)) {
+    # arrive at raster grid
+    
+    # make temp record of change in elevation
+    neighbor_list = c()
+    for (dy in ord) {
+      #print(dy)
+      for (dx in ord) {
+        elev_diff <- c()
+        if (!is.na(ras[r,c])) {
+          if (!is.na(ras[r+dx, c+dy]) ) {
+            elev_diff = ras[r,c] - ras[r+dx, c+dy]
+            #print(elev_diff)
+          } 
+        }
+        neighbor_list <- c(neighbor_list, elev_diff)
+        print(neighbor_list)
+      }
+    }
+    # finished grid, find values for current grid
+    #print(paste("r", r))
+    #print(paste("c", c))
+    #print(ras_flow[r, c])
+    #print(which.max(neighbor_list))
+    ras_flow[r,c] <- which.max(neighbor_list)
+  }
+}
+ras_flow[1,] <- NA
+ras_flow[nrow(ras),] <- NA
+ras_flow[,ncol(ras)] <- NA
+ras_flow[,1] <- NA
+
+#flow_res <- flow_dir(test_m)
+
+```
+
+```{r mask-tree-tip}
+tree_tip <- ras_flow[ras_flow==5]
+tree_tip_height <- mask(chm, tree_tip)
+
+
+```
+
+
